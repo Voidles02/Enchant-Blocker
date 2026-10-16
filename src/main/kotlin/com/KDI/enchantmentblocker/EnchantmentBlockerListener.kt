@@ -36,18 +36,23 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
             val rule = rulesByType.getOrPut(type) {
                 val path = "block.types.$type"
                 val enchantmentPath = "$path.enchantments"
-                val enchantments = if (plugin.config.contains(enchantmentPath)) {
+                val enchantments = plugin.config.getConfigurationSection(enchantmentPath)?.let { section ->
+                    section.getKeys(false).associate { key ->
+                        normalizeEnchantment(key) to section.getInt(key, 1).coerceAtLeast(1)
+                    }
+                } ?: if (plugin.config.contains(enchantmentPath)) {
                     plugin.config.getStringList(enchantmentPath)
+                        .asSequence()
+                        .map(::normalizeEnchantment)
+                        .filter(String::isNotEmpty)
+                        .associateWith { 1 }
                 } else {
-                    listOf("*")
+                    mapOf("*" to 1)
                 }
                 EnchantmentRule(
                     enabled = plugin.config.getBoolean("$path.enabled", true),
                     armor = type.startsWith("armor."),
-                    enchantments = enchantments.asSequence()
-                        .map(::normalizeEnchantment)
-                        .filter(String::isNotEmpty)
-                        .toSet()
+                    enchantments = enchantments
                 )
             }
             updatedRules[material] = rule
@@ -58,7 +63,7 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onEnchantItem(event: EnchantItemEvent) {
         val rule = activeRule(event.item) ?: return
-        if (blockEnchantingTable && event.enchantsToAdd.keys.any(rule::blocks)) {
+        if (blockEnchantingTable && event.enchantsToAdd.any { (enchantment, level) -> rule.blocks(enchantment, level) }) {
             event.isCancelled = true
         }
     }
@@ -88,7 +93,7 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
         val rule = activeRule(result) ?: return false
         val firstInput = inventory.getItem(0)
         return result.enchantments.any { (enchantment, level) ->
-            rule.blocks(enchantment) && level > (firstInput?.getEnchantmentLevel(enchantment) ?: 0)
+            rule.blocks(enchantment, level) && level > (firstInput?.getEnchantmentLevel(enchantment) ?: 0)
         }
     }
 
@@ -102,11 +107,12 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
     private data class EnchantmentRule(
         val enabled: Boolean,
         val armor: Boolean,
-        val enchantments: Set<String>
+        val enchantments: Map<String, Int>
     ) {
-        fun blocks(enchantment: Enchantment): Boolean {
+        fun blocks(enchantment: Enchantment, level: Int): Boolean {
             val key = normalizeEnchantment(enchantment.key.toString())
-            return "*" in enchantments || key in enchantments
+            val minimumBlockedLevel = enchantments[key] ?: enchantments["*"] ?: return false
+            return level >= minimumBlockedLevel
         }
     }
 
@@ -127,6 +133,7 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
                 name == "BOW" -> "weapons.bows"
                 name == "CROSSBOW" -> "weapons.crossbows"
                 name == "TRIDENT" -> "weapons.tridents"
+                name == "SPEAR" || name.endsWith("_SPEAR") -> "weapons.spears"
                 name == "MACE" -> "weapons.maces"
                 name.endsWith("_HELMET") -> "armor.helmets"
                 name.endsWith("_CHESTPLATE") -> "armor.chestplates"
