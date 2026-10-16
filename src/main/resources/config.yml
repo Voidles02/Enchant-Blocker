@@ -1,0 +1,155 @@
+block:
+  weapons: true
+  armor: true
+  enchanting-table: true
+  anvil: true
+  types:
+    weapons:
+      swords:
+        enabled: true
+        enchantments:
+          - sharpness
+          - smite
+          - bane_of_arthropods
+          - knockback
+          - fire_aspect
+          - looting
+          - sweeping_edge
+          - unbreaking
+          - mending
+          - vanishing_curse
+      axes:
+        enabled: true
+        enchantments:
+          - sharpness
+          - smite
+          - bane_of_arthropods
+          - knockback
+          - fire_aspect
+          - efficiency
+          - silk_touch
+          - fortune
+          - unbreaking
+          - mending
+          - vanishing_curse
+      bows:
+        enabled: true
+        enchantments:
+          - power
+          - punch
+          - flame
+          - infinity
+          - unbreaking
+          - mending
+          - vanishing_curse
+      crossbows:
+        enabled: true
+        enchantments:
+          - piercing
+          - multishot
+          - quick_charge
+          - unbreaking
+          - mending
+          - vanishing_curse
+      tridents:
+        enabled: true
+        enchantments:
+          - impaling
+          - loyalty
+          - riptide
+          - channeling
+          - unbreaking
+          - mending
+          - vanishing_curse
+      maces:
+        enabled: true
+        enchantments:
+          - density
+          - breach
+          - wind_burst
+          - smite
+          - bane_of_arthropods
+          - fire_aspect
+          - unbreaking
+          - mending
+          - vanishing_curse
+    armor:
+      helmets:
+        enabled: true
+        enchantments:
+          - protection
+          - fire_protection
+          - blast_protection
+          - projectile_protection
+          - respiration
+          - aqua_affinity
+          - thorns
+          - unbreaking
+          - mending
+          - binding_curse
+          - vanishing_curse
+      chestplates:
+        enabled: true
+        enchantments:
+          - protection
+          - fire_protection
+          - blast_protection
+          - projectile_protection
+          - thorns
+          - unbreaking
+          - mending
+          - binding_curse
+          - vanishing_curse
+      leggings:
+        enabled: true
+        enchantments:
+          - protection
+          - fire_protection
+          - blast_protection
+          - projectile_protection
+          - swift_sneak
+          - thorns
+          - unbreaking
+          - mending
+          - binding_curse
+          - vanishing_curse
+      boots:
+        enabled: true
+        enchantments:
+          - protection
+          - fire_protection
+          - blast_protection
+          - projectile_protection
+          - feather_falling
+          - depth_strider
+          - frost_walker
+          - soul_speed
+          - thorns
+          - unbreaking
+          - mending
+          - binding_curse
+          - vanishing_curse
+      shields:
+        enabled: true
+        enchantments:
+          - unbreaking
+          - mending
+          - vanishing_curse
+      elytra:
+        enabled: true
+        enchantments:
+          - unbreaking
+          - mending
+          - vanishing_curse
+      horse-armor:
+        enabled: true
+        enchantments:
+          - unbreaking
+          - mending
+          - vanishing_curse
+      wolf-armor:
+        enabled: true
+        enchantments:
+          - unbreaking
+          - mending
+          - vanishing_curse

@@ -1,0 +1,16 @@
+name: EnchantmentBlocker
+version: 12A-enchant.v7
+main: com.KDI.enchantmentblocker.EnchantmentBlockerPlugin
+api-version: '1.21'
+description: Blocks enchantments from being added to weapons and armor.
+author: voidles02
+commands:
+  enchantmentblocker:
+    description: Admin controls for enchantment blocking.
+    usage: /enchantmentblocker <help|version|enable|disable|reset|reload|status|weapons|armor|methods>
+    permission: enchantmentblocker.admin
+    permission-message: You do not have permission to use this command.
+permissions:
+  enchantmentblocker.admin:
+    description: Allows use of all EnchantmentBlocker admin commands.
+    default: op
