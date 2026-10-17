@@ -4,7 +4,7 @@ EnchantmentBlocker controls which enchantments can be added to weapon and armor 
 
 | Property | Value |
 | --- | --- |
-| Version | `12A-enchant.v9` |
+| Version | `12A-enchant.v10` |
 | Author | `voidles02` |
 | Server API | Paper 1.21+ (built against Paper 1.21.4) |
 | Java runtime | Java 25 |
@@ -107,7 +107,7 @@ The top-level weapon/armor and method switches must also be on for a type rule t
 - **Repairs and renames:** Remain available when they do not add or increase a blocked enchantment.
 - **Dimensions:** No world or dimension filter is used. The same rules apply anywhere the relevant vanilla inventory events occur.
 
-The checks only process relevant inventory events and use cached material-to-rule mappings and cached enchantment sets. Configuration is parsed when the plugin starts or reloads, not during each event.
+The checks only process relevant inventory events and use cached material-to-rule mappings and cached enchantment sets. Configuration is parsed when the plugin starts or reloads, not during each event. Anvil compatibility filtering now reuses target/result metadata and reads enchantment levels once per relevant enchantment instead of repeatedly fetching item metadata. This is a targeted reduction in event-time work and temporary allocations; actual gains depend on server workload, and no fixed 50× improvement is claimed without representative benchmarks.
 
 ## Commands
 
@@ -147,4 +147,4 @@ Enforcement covers vanilla enchanting-table and anvil events. Other plugins or c
 
 ## Versioning
 
-Current version: `12A-enchant.v9`. For each future release change, increment the suffix (`12A-enchant.v10`, `12A-enchant.v11`, and so on) and keep the version in `build.gradle.kts`, `plugin.yml`, and this README identical.
+Current version: `12A-enchant.v10`. For each future release change, increment the suffix (`12A-enchant.v11`, `12A-enchant.v12`, and so on) and keep the version in `build.gradle.kts`, `plugin.yml`, and this README identical.

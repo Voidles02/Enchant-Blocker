@@ -103,7 +103,11 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
         val storedEnchantments = bookMeta.storedEnchants.keys
         if (storedEnchantments.isEmpty()) return result
 
-        val existingEnchantments = existingEnchantments(target).toMutableSet()
+        val targetMeta = target.itemMeta
+        val existingEnchantments = target.enchantments.keys.toMutableSet()
+        if (targetMeta is EnchantmentStorageMeta) {
+            existingEnchantments.addAll(targetMeta.storedEnchants.keys)
+        }
         val incompatibleEnchantments = mutableListOf<Enchantment>()
         var applicableEnchantments = 0
         for (enchantment in storedEnchantments.sortedBy { it.key.toString() }) {
@@ -116,35 +120,36 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
         }
 
         if (applicableEnchantments == 0) return null
+        if (incompatibleEnchantments.isEmpty()) return result
 
-        val enchantmentsToRemove = incompatibleEnchantments.filter { enchantment ->
-            enchantmentLevel(result, enchantment) > enchantmentLevel(target, enchantment)
+        val targetStoredMeta = targetMeta as? EnchantmentStorageMeta
+        val resultMeta = result.itemMeta
+        val resultStoredMeta = resultMeta as? EnchantmentStorageMeta
+        val enchantmentsToRemove = mutableListOf<Enchantment>()
+        for (enchantment in incompatibleEnchantments) {
+            val targetLevel = maxOf(
+                target.getEnchantmentLevel(enchantment),
+                targetStoredMeta?.getStoredEnchantLevel(enchantment) ?: 0
+            )
+            val resultLevel = maxOf(
+                result.getEnchantmentLevel(enchantment),
+                resultStoredMeta?.getStoredEnchantLevel(enchantment) ?: 0
+            )
+            if (resultLevel > targetLevel) enchantmentsToRemove.add(enchantment)
         }
         if (enchantmentsToRemove.isEmpty()) return result
 
         val filteredResult = result.clone()
-        val resultMeta = filteredResult.itemMeta ?: return null
+        val filteredResultMeta = filteredResult.itemMeta ?: return null
         for (enchantment in enchantmentsToRemove) {
-            if (resultMeta is EnchantmentStorageMeta) {
-                resultMeta.removeStoredEnchant(enchantment)
+            if (filteredResultMeta is EnchantmentStorageMeta) {
+                filteredResultMeta.removeStoredEnchant(enchantment)
             } else {
-                resultMeta.removeEnchant(enchantment)
+                filteredResultMeta.removeEnchant(enchantment)
             }
         }
-        filteredResult.itemMeta = resultMeta
+        filteredResult.itemMeta = filteredResultMeta
         return filteredResult
-    }
-
-    private fun existingEnchantments(item: ItemStack): Set<Enchantment> {
-        val enchantments = item.enchantments.keys.toMutableSet()
-        val meta = item.itemMeta
-        if (meta is EnchantmentStorageMeta) enchantments.addAll(meta.storedEnchants.keys)
-        return enchantments
-    }
-
-    private fun enchantmentLevel(item: ItemStack, enchantment: Enchantment): Int {
-        val storedLevel = (item.itemMeta as? EnchantmentStorageMeta)?.getStoredEnchantLevel(enchantment) ?: 0
-        return maxOf(item.getEnchantmentLevel(enchantment), storedLevel)
     }
 
     private fun addsBlockedEnchantment(result: ItemStack, inventory: AnvilInventory): Boolean {
