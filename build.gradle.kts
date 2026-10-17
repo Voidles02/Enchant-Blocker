@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.KDI"
-version = "12A-enchant.v8"
+version = "12A-enchant.v9"
 
 repositories {
     mavenCentral()

@@ -11,6 +11,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.AnvilInventory
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.EnchantmentStorageMeta
 import java.util.EnumMap
 
 class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
@@ -70,23 +71,80 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     fun onPrepareAnvil(event: PrepareAnvilEvent) {
-        if (!blockAnvil) return
-
         val result = event.result ?: return
-        if (addsBlockedEnchantment(result, event.inventory)) {
+        val compatibleResult = filterIncompatibleBookEnchantments(result, event.inventory)
+        if (compatibleResult == null || (blockAnvil && addsBlockedEnchantment(compatibleResult, event.inventory))) {
             event.result = null
+        } else {
+            event.result = compatibleResult
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onAnvilResultClick(event: InventoryClickEvent) {
-        if (!blockAnvil || event.view.type != InventoryType.ANVIL || event.rawSlot != 2) return
+        if (event.view.type != InventoryType.ANVIL || event.rawSlot != 2) return
 
         val result = event.currentItem ?: return
         val inventory = event.view.topInventory as? AnvilInventory ?: return
-        if (addsBlockedEnchantment(result, inventory)) {
+        if (hasIncompatibleBookEnchantments(result, inventory) || (blockAnvil && addsBlockedEnchantment(result, inventory))) {
             event.isCancelled = true
         }
+    }
+
+    private fun hasIncompatibleBookEnchantments(result: ItemStack, inventory: AnvilInventory): Boolean {
+        val compatibleResult = filterIncompatibleBookEnchantments(result, inventory) ?: return true
+        return !compatibleResult.isSimilar(result)
+    }
+
+    private fun filterIncompatibleBookEnchantments(result: ItemStack, inventory: AnvilInventory): ItemStack? {
+        val target = inventory.getItem(0) ?: return result
+        val book = inventory.getItem(1) ?: return result
+        val bookMeta = book.itemMeta as? EnchantmentStorageMeta ?: return result
+        val storedEnchantments = bookMeta.storedEnchants.keys
+        if (storedEnchantments.isEmpty()) return result
+
+        val existingEnchantments = existingEnchantments(target).toMutableSet()
+        val incompatibleEnchantments = mutableListOf<Enchantment>()
+        var applicableEnchantments = 0
+        for (enchantment in storedEnchantments.sortedBy { it.key.toString() }) {
+            if (!enchantment.canEnchantItem(target) || existingEnchantments.any(enchantment::conflictsWith)) {
+                incompatibleEnchantments.add(enchantment)
+            } else {
+                applicableEnchantments++
+                existingEnchantments.add(enchantment)
+            }
+        }
+
+        if (applicableEnchantments == 0) return null
+
+        val enchantmentsToRemove = incompatibleEnchantments.filter { enchantment ->
+            enchantmentLevel(result, enchantment) > enchantmentLevel(target, enchantment)
+        }
+        if (enchantmentsToRemove.isEmpty()) return result
+
+        val filteredResult = result.clone()
+        val resultMeta = filteredResult.itemMeta ?: return null
+        for (enchantment in enchantmentsToRemove) {
+            if (resultMeta is EnchantmentStorageMeta) {
+                resultMeta.removeStoredEnchant(enchantment)
+            } else {
+                resultMeta.removeEnchant(enchantment)
+            }
+        }
+        filteredResult.itemMeta = resultMeta
+        return filteredResult
+    }
+
+    private fun existingEnchantments(item: ItemStack): Set<Enchantment> {
+        val enchantments = item.enchantments.keys.toMutableSet()
+        val meta = item.itemMeta
+        if (meta is EnchantmentStorageMeta) enchantments.addAll(meta.storedEnchants.keys)
+        return enchantments
+    }
+
+    private fun enchantmentLevel(item: ItemStack, enchantment: Enchantment): Int {
+        val storedLevel = (item.itemMeta as? EnchantmentStorageMeta)?.getStoredEnchantLevel(enchantment) ?: 0
+        return maxOf(item.getEnchantmentLevel(enchantment), storedLevel)
     }
 
     private fun addsBlockedEnchantment(result: ItemStack, inventory: AnvilInventory): Boolean {

@@ -4,7 +4,7 @@ EnchantmentBlocker controls which enchantments can be added to weapon and armor 
 
 | Property | Value |
 | --- | --- |
-| Version | `12A-enchant.v8` |
+| Version | `12A-enchant.v9` |
 | Author | `voidles02` |
 | Server API | Paper 1.21+ (built against Paper 1.21.4) |
 | Java runtime | Java 25 |
@@ -98,8 +98,12 @@ The top-level weapon/armor and method switches must also be on for a type rule t
 ## Enforcement behavior
 
 - **Enchanting table:** Cancels an attempt only when a proposed enchantment reaches its configured blocked level for that item type.
-- **Anvil:** Removes a prepared result if it adds or increases an enchantment to a configured blocked level compared with the first input. This includes enchantments transferred from the second input.
-- **Anvil output:** Rechecks attempts to collect the result as an additional guard against output changes made after preparation.
+- **Enchanted books in anvils:** Each stored enchantment is accepted only when `Enchantment.canEnchantItem` allows it on the target and it does not conflict with an enchantment already on the target or another accepted book enchantment. Incompatible enchantments are removed from the prepared result; compatible enchantments remain. If none can be applied, the output is empty.
+- These vanilla compatibility checks always apply to enchanted books, even when the configurable `block.anvil` rule switch is off; that switch controls only the plugin's configured enchantment-blocking rules.
+- **Examples:** Breach IV on a netherite sword produces no result, while Breach IV on a mace is allowed. A book containing both Sharpness and Smite applies only the enchantment that does not conflict with the target and other accepted book enchantments.
+- **Anvil rules:** After compatibility filtering, the plugin removes the result if it adds or increases an enchantment to a configured blocked level compared with the first input. This includes enchantments transferred from the second input.
+- **Anvil output:** Rechecks attempts to collect results that contain incompatible book enchantments or configured blocked enchantments, guarding against output changes made after preparation.
+- **XP cost and other anvil behavior:** The plugin does not modify the vanilla anvil cost or alter repair/rename behavior when a compatible result is allowed.
 - **Repairs and renames:** Remain available when they do not add or increase a blocked enchantment.
 - **Dimensions:** No world or dimension filter is used. The same rules apply anywhere the relevant vanilla inventory events occur.
 
@@ -143,4 +147,4 @@ Enforcement covers vanilla enchanting-table and anvil events. Other plugins or c
 
 ## Versioning
 
-Current version: `12A-enchant.v8`. For each future release change, increment the suffix (`12A-enchant.v9`, `12A-enchant.v10`, and so on) and keep the version in `build.gradle.kts`, `plugin.yml`, and this README identical.
+Current version: `12A-enchant.v9`. For each future release change, increment the suffix (`12A-enchant.v10`, `12A-enchant.v11`, and so on) and keep the version in `build.gradle.kts`, `plugin.yml`, and this README identical.

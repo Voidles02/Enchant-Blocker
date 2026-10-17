@@ -1,5 +1,5 @@
 name: EnchantmentBlocker
-version: 12A-enchant.v8
+version: 12A-enchant.v9
 main: com.KDI.enchantmentblocker.EnchantmentBlockerPlugin
 api-version: '1.21'
 description: Blocks enchantments from being added to weapons and armor.
