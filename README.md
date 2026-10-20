@@ -4,7 +4,7 @@ EnchantmentBlocker controls which enchantments can be added to weapon and armor 
 
 | Property | Value |
 | --- | --- |
-| Version | `12A-enchant.v10` |
+| Version | `12A-enchant.v11` |
 | Author | `voidles02` |
 | Server API | Paper 1.21+ (built against Paper 1.21.4) |
 | Java runtime | Java 25 |
@@ -98,16 +98,17 @@ The top-level weapon/armor and method switches must also be on for a type rule t
 ## Enforcement behavior
 
 - **Enchanting table:** Cancels an attempt only when a proposed enchantment reaches its configured blocked level for that item type.
-- **Enchanted books in anvils:** Each stored enchantment is accepted only when `Enchantment.canEnchantItem` allows it on the target and it does not conflict with an enchantment already on the target or another accepted book enchantment. Incompatible enchantments are removed from the prepared result; compatible enchantments remain. If none can be applied, the output is empty.
+- **Book-to-book anvils:** The plugin preserves the server's vanilla book-merging result, including merging matching levels (for example, Protection II + Protection II can become Protection III) and combining different enchantments on one book.
+- **Enchanted books on gear:** Each stored enchantment is accepted only when `Enchantment.canEnchantItem` allows it on the target and it does not conflict with an enchantment already on the target or another accepted book enchantment. Incompatible enchantments are removed from the prepared result; compatible enchantments remain. If none can be applied, the output is empty.
 - These vanilla compatibility checks always apply to enchanted books, even when the configurable `block.anvil` rule switch is off; that switch controls only the plugin's configured enchantment-blocking rules.
 - **Examples:** Breach IV on a netherite sword produces no result, while Breach IV on a mace is allowed. A book containing both Sharpness and Smite applies only the enchantment that does not conflict with the target and other accepted book enchantments.
 - **Anvil rules:** After compatibility filtering, the plugin removes the result if it adds or increases an enchantment to a configured blocked level compared with the first input. This includes enchantments transferred from the second input.
-- **Anvil output:** Rechecks attempts to collect results that contain incompatible book enchantments or configured blocked enchantments, guarding against output changes made after preparation.
+- **Anvil output:** Rechecks the server-side result and current inputs when a player collects the output, including clicks already cancelled by another listener. It does not trust a client-supplied item stack; latency alone cannot bypass the check.
 - **XP cost and other anvil behavior:** The plugin does not modify the vanilla anvil cost or alter repair/rename behavior when a compatible result is allowed.
 - **Repairs and renames:** Remain available when they do not add or increase a blocked enchantment.
 - **Dimensions:** No world or dimension filter is used. The same rules apply anywhere the relevant vanilla inventory events occur.
 
-The checks only process relevant inventory events and use cached material-to-rule mappings and cached enchantment sets. Configuration is parsed when the plugin starts or reloads, not during each event. Anvil compatibility filtering now reuses target/result metadata and reads enchantment levels once per relevant enchantment instead of repeatedly fetching item metadata. This is a targeted reduction in event-time work and temporary allocations; actual gains depend on server workload, and no fixed 50× improvement is claimed without representative benchmarks.
+The checks only process relevant inventory events and use cached material-to-rule mappings. Configuration is parsed when the plugin starts or reloads, not during each event. The anvil filter avoids an unnecessary target metadata lookup and skips sorting when a book has only one stored enchantment. These are small targeted reductions in event-time work, not a benchmarked 50× improvement. No per-player tracker/cache is maintained, avoiding extra memory growth.
 
 ## Commands
 
@@ -141,10 +142,10 @@ Set the permission to `false` to revoke it. The plugin uses Bukkit's standard pe
 
 ## Reliability and limitations
 
-The plugin creates no repeating tasks, background threads, database connections, or player caches. Bukkit unregisters its event listener when the plugin is disabled; on restart, the configuration and cached rules are rebuilt during enable. There are no dimension-specific resources or shutdown jobs to leave behind.
+The plugin creates no repeating tasks, background threads, database connections, player caches, or tracking subsystem. Bukkit unregisters its event listener when the plugin is disabled; on restart, the configuration and cached rules are rebuilt during enable. There are no dimension-specific resources or shutdown jobs to leave behind.
 
 Enforcement covers vanilla enchanting-table and anvil events. Other plugins or commands that directly edit item data, custom enchantment systems that bypass Bukkit's enchantment events, or another plugin that deliberately changes inventory output after this plugin checks it can operate outside these checks. As with any Bukkit plugin, conflicts from plugins that rewrite the same event cannot be guaranteed against universally.
 
 ## Versioning
 
-Current version: `12A-enchant.v10`. For each future release change, increment the suffix (`12A-enchant.v11`, `12A-enchant.v12`, and so on) and keep the version in `build.gradle.kts`, `plugin.yml`, and this README identical.
+Current version: `12A-enchant.v11`. For each future release change, increment the suffix (`12A-enchant.v12`, `12A-enchant.v13`, and so on) and keep the version in `build.gradle.kts`, `plugin.yml`, and this README identical.

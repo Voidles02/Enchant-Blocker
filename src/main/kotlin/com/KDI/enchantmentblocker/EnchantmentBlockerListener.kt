@@ -80,7 +80,7 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST)
     fun onAnvilResultClick(event: InventoryClickEvent) {
         if (event.view.type != InventoryType.ANVIL || event.rawSlot != 2) return
 
@@ -99,18 +99,20 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
     private fun filterIncompatibleBookEnchantments(result: ItemStack, inventory: AnvilInventory): ItemStack? {
         val target = inventory.getItem(0) ?: return result
         val book = inventory.getItem(1) ?: return result
+        if (target.type == Material.ENCHANTED_BOOK) return result
         val bookMeta = book.itemMeta as? EnchantmentStorageMeta ?: return result
         val storedEnchantments = bookMeta.storedEnchants.keys
         if (storedEnchantments.isEmpty()) return result
 
-        val targetMeta = target.itemMeta
         val existingEnchantments = target.enchantments.keys.toMutableSet()
-        if (targetMeta is EnchantmentStorageMeta) {
-            existingEnchantments.addAll(targetMeta.storedEnchants.keys)
-        }
         val incompatibleEnchantments = mutableListOf<Enchantment>()
         var applicableEnchantments = 0
-        for (enchantment in storedEnchantments.sortedBy { it.key.toString() }) {
+        val orderedEnchantments = if (storedEnchantments.size > 1) {
+            storedEnchantments.sortedBy { it.key.toString() }
+        } else {
+            storedEnchantments
+        }
+        for (enchantment in orderedEnchantments) {
             if (!enchantment.canEnchantItem(target) || existingEnchantments.any(enchantment::conflictsWith)) {
                 incompatibleEnchantments.add(enchantment)
             } else {
@@ -122,15 +124,11 @@ class EnchantmentBlockerListener(plugin: EnchantmentBlockerPlugin) : Listener {
         if (applicableEnchantments == 0) return null
         if (incompatibleEnchantments.isEmpty()) return result
 
-        val targetStoredMeta = targetMeta as? EnchantmentStorageMeta
         val resultMeta = result.itemMeta
         val resultStoredMeta = resultMeta as? EnchantmentStorageMeta
         val enchantmentsToRemove = mutableListOf<Enchantment>()
         for (enchantment in incompatibleEnchantments) {
-            val targetLevel = maxOf(
-                target.getEnchantmentLevel(enchantment),
-                targetStoredMeta?.getStoredEnchantLevel(enchantment) ?: 0
-            )
+            val targetLevel = target.getEnchantmentLevel(enchantment)
             val resultLevel = maxOf(
                 result.getEnchantmentLevel(enchantment),
                 resultStoredMeta?.getStoredEnchantLevel(enchantment) ?: 0
